@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Emerita;
 
-namespace loTechCS.Chess
+namespace Emerita
 {
     public sealed class SimpleStack<T> where T : struct
     {

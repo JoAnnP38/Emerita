@@ -11,7 +11,7 @@
         All = (WhiteKingSide | WhiteQueenSide | BlackKingSide | BlackQueenSide)
     }
 
-    public enum MoveFlags : sbyte
+    public enum MoveFlags
     {
         Normal = 0,
         Capture,

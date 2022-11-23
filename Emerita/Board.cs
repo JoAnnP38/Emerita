@@ -6,12 +6,12 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata.Ecma335;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Sources;
-using loTechCS.Chess;
 using Microsoft.Extensions.Logging;
 
 namespace Emerita
@@ -32,8 +32,9 @@ namespace Emerita
         private int? enPassant;
         private int? enPassantValidated;
         private int sideToMove;
-        private ZobristHash hash;
-        private ZobristHash pawnHash;
+        private int opponent;
+        private ulong hash;
+        private ulong pawnHash;
 
         private readonly IntegerArray2D history = new(Constants.MAX_SQUARES, Constants.MAX_SQUARES);
 
@@ -174,9 +175,9 @@ namespace Emerita
                 board.castling = Castling;
                 board.enPassant = EnPassant;
                 board.enPassantValidated = EnPassantValidated;
-                board.sideToMove = SideToMove;
-                board.hash.Hash = Hash;
-                board.pawnHash.Hash = PawnHash;
+                board.SideToMove = SideToMove;
+                board.hash = Hash;
+                board.pawnHash = PawnHash;
             }
         }
 
@@ -664,7 +665,17 @@ namespace Emerita
         public CastlingFlags Castling => castling;
         public int? EnPassant => enPassant;
         public int? EnPassantValidated => enPassantValidated;
-        public int SideToMove => sideToMove;
+
+        public int SideToMove
+        {
+            get => sideToMove;
+            set
+            {
+                sideToMove = value;
+                opponent = sideToMove ^ 1;
+            }
+        }
+
         public ulong Hash => hash;
         public ulong PawnHash => pawnHash;
 
@@ -672,7 +683,8 @@ namespace Emerita
         {
             return history[from, to];
         }
-        public int OpponentColor => sideToMove ^ 0x01;
+
+        public int OpponentColor => opponent;
 
         #endregion
 
@@ -684,14 +696,14 @@ namespace Emerita
             bbaUnits[Constants.COLOR_BLACK] = Constants.BITBOARD_EMPTY;
             bbAll = Constants.BITBOARD_EMPTY;
             ply = 0;
-            sideToMove = Constants.COLOR_WHITE;
+            SideToMove = Constants.COLOR_WHITE;
             castling = CastlingFlags.None;
             enPassant = null;
             enPassantValidated = null;
             halfMoveClock = 0;
             fullMoveCounter = 0;
-            hash.Reset();
-            pawnHash.Reset();
+            hash = 0ul;
+            pawnHash = 0ul;
             boardStateStack.Clear();
             history.Clear();
             repeatStack.Clear();
@@ -729,7 +741,7 @@ namespace Emerita
             while (bb1 != 0)
             {
                 from = ChessMath.LowestSetBitIndex(bb1);
-                bb1 = ChessMath.ResetLowestSetBit(bb1);
+                ChessMath.ResetLowestSetBit(ref bb1);
                 to = pawnLeft[sideToMove, from];
                 AddPawnMove(moveList, from, to, MoveFlags.Capture, capture: board[to],
                     score: captureScores[board[to], Constants.PIECE_PAWN]);
@@ -738,7 +750,7 @@ namespace Emerita
             while (bb2 != 0)
             {
                 from = ChessMath.LowestSetBitIndex(bb2);
-                bb2 = ChessMath.ResetLowestSetBit(bb2);
+                ChessMath.ResetLowestSetBit(ref bb2);
                 to = pawnRight[sideToMove, from];
                 AddPawnMove(moveList, from, to, MoveFlags.Capture, capture: board[to],
                     score: captureScores[board[to], Constants.PIECE_PAWN]);
@@ -747,7 +759,7 @@ namespace Emerita
             while (bb3 != 0)
             {
                 from = ChessMath.LowestSetBitIndex(bb3);
-                bb3 = ChessMath.ResetLowestSetBit(bb3);
+                ChessMath.ResetLowestSetBit(ref bb3);
                 to = pawnPlus[sideToMove, from];
                 AddPawnMove(moveList, from, to, score: history[from, to]);
             }
@@ -755,7 +767,7 @@ namespace Emerita
             while (bb4 != 0)
             {
                 from = ChessMath.LowestSetBitIndex(bb4);
-                bb4 = ChessMath.ResetLowestSetBit(bb4);
+                ChessMath.ResetLowestSetBit(ref bb4);
                 to = pawnDouble[sideToMove, from];
                 moveList.Add(Constants.PIECE_PAWN, from, to, MoveFlags.DblPawnMove, score: history[from, to]);
             }
@@ -768,12 +780,12 @@ namespace Emerita
             while (bb1 != 0)
             {
                 from = ChessMath.LowestSetBitIndex(bb1);
-                bb1 = ChessMath.ResetLowestSetBit(bb1);
+                ChessMath.ResetLowestSetBit(ref bb1);
                 bb2 = bbaKnightMoves[from] & bbaUnits[OpponentColor];
                 while (bb2 != 0)
                 {
                     to = ChessMath.LowestSetBitIndex(bb2);
-                    bb2 = ChessMath.ResetLowestSetBit(bb2);
+                    ChessMath.ResetLowestSetBit(ref bb2);
                     moveList.Add(Constants.PIECE_KNIGHT, from, to, MoveFlags.Capture, capture: board[to],
                         score: captureScores[board[to], Constants.PIECE_KNIGHT]);
                 }
@@ -782,7 +794,7 @@ namespace Emerita
                 while (bb2 != 0)
                 {
                     to = ChessMath.LowestSetBitIndex(bb2);
-                    bb2 = ChessMath.ResetLowestSetBit(bb2);
+                    ChessMath.ResetLowestSetBit(ref bb2);
                     moveList.Add(Constants.PIECE_KNIGHT, from, to, score: history[from, to]);
                 }
             }
@@ -795,7 +807,7 @@ namespace Emerita
             while (bb1 != 0)
             {
                 from = ChessMath.LowestSetBitIndex(bb1);
-                bb1 = ChessMath.ResetLowestSetBit(bb1);
+                ChessMath.ResetLowestSetBit(ref bb1);
                 for (int dir = Constants.DIR_NE; dir < Constants.MAX_DIRECTIONS; dir += 2)
                 {
                     for (to = qrbMoves[from, dir]; to > -1; to = qrbMoves[to, dir])
@@ -822,7 +834,7 @@ namespace Emerita
             while (bb1 != 0)
             {
                 from = ChessMath.LowestSetBitIndex(bb1);
-                bb1 = ChessMath.ResetLowestSetBit(bb1);
+                ChessMath.ResetLowestSetBit(ref bb1);
                 for (int dir = Constants.DIR_N; dir < Constants.MAX_DIRECTIONS; dir += 2)
                 {
                     for (to = qrbMoves[from, dir]; to > -1; to = qrbMoves[to, dir])
@@ -850,7 +862,7 @@ namespace Emerita
             while (bb1 != 0)
             {
                 from = ChessMath.LowestSetBitIndex(bb1);
-                bb1 = ChessMath.ResetLowestSetBit(bb1);
+                ChessMath.ResetLowestSetBit(ref bb1);
                 for (int dir = Constants.DIR_N; dir < Constants.MAX_DIRECTIONS; ++dir)
                 {
                     for (to = qrbMoves[from, dir]; to > -1; to = qrbMoves[to, dir])
@@ -879,7 +891,7 @@ namespace Emerita
             while (bb1 != 0)
             {
                 to = ChessMath.LowestSetBitIndex(bb1);
-                bb1 = ChessMath.ResetLowestSetBit(bb1);
+                ChessMath.ResetLowestSetBit(ref bb1);
                 moveList.Add(Constants.PIECE_KING, from, to, MoveFlags.Capture, capture: board[to],
                     score: captureScores[board[to], Constants.PIECE_KING]);
             }
@@ -888,7 +900,7 @@ namespace Emerita
             while (bb1 != 0)
             {
                 to = ChessMath.LowestSetBitIndex(bb1);
-                bb1 = ChessMath.ResetLowestSetBit(bb1);
+                ChessMath.ResetLowestSetBit(ref bb1);
                 moveList.Add(Constants.PIECE_KING, from, to, score: history[from, to]);
             }
 
@@ -922,7 +934,7 @@ namespace Emerita
                 while (bb != 0)
                 {
                     int from = ChessMath.LowestSetBitIndex(bb);
-                    bb = ChessMath.ResetLowestSetBit(bb);
+                    ChessMath.ResetLowestSetBit(ref bb);
                     int captIndex = enPassantValidated.Value + epOffset[sideToMove];
                     moveList.Add(Constants.PIECE_PAWN, from, enPassantValidated.Value, MoveFlags.EnPassant,
                         board[captIndex], score: captureScores[board[captIndex], Constants.PIECE_PAWN]);
@@ -972,13 +984,14 @@ namespace Emerita
 
             if (enPassantValidated.HasValue)
             {
-                hash.HashEnPassant(enPassantValidated.Value);
+                ZobristHash.HashEnPassant(ref hash, enPassantValidated.Value);
             }
             enPassant = null;
             enPassantValidated = null;
 
-            hash.HashCastling(castling);
+            ZobristHash.HashCastling(ref hash, castling);
             ply++;
+
 
             switch (move.Flags)
             {
@@ -1027,7 +1040,7 @@ namespace Emerita
                     if (IsEnPassantValid(OpponentColor))
                     {
                         enPassantValidated = enPassant;
-                        hash.HashEnPassant(enPassantValidated.Value);
+                        ZobristHash.HashEnPassant(ref hash, enPassantValidated.Value);
                     }
                     halfMoveClock = 0;
                     break;
@@ -1051,8 +1064,8 @@ namespace Emerita
                     break;
 
                 default:
-                    Util.Fail($"Invalid move encountered in MakeMove: {move}.");
-                    Util.TraceError($"Invalid move encountered in MakeMove: {move}.");
+                    Util.Fail($"Invalid move encountered in MakeMove: ({move}).");
+                    Util.TraceError($"Invalid move encountered in MakeMove: ({move}).");
                     break;
             }
 
@@ -1061,11 +1074,11 @@ namespace Emerita
                 fullMoveCounter++;
             }
 
-            hash.HashCastling(castling);
-            hash.HashActiveColor(sideToMove);
-            sideToMove = OpponentColor;
+            ZobristHash.HashCastling(ref hash, castling);
+            ZobristHash.HashActiveColor(ref hash, sideToMove);
+            SideToMove = OpponentColor;
 
-            if (IsCheck(SideToMove))
+            if (IsCheck(sideToMove))
             {
                 UnmakeMove();
                 return false;
@@ -1076,7 +1089,7 @@ namespace Emerita
 
         public void UnmakeMove()
         {
-            sideToMove = OpponentColor;
+            SideToMove = OpponentColor;
             Move move = boardStateStack.Peek().Move;
 
             switch (move.Flags)
@@ -1120,8 +1133,8 @@ namespace Emerita
                     break;
 
                 default:
-                    Util.Fail($"Invalid move encountered in UnmakeMove: {move}.");
-                    Util.TraceError($"Invalid move encountered in UnmakeMove: {move}.");
+                    Util.Fail($"Invalid move encountered in UnmakeMove: ({move}).");
+                    Util.TraceError($"Invalid move encountered in UnmakeMove: ({move}).");
                     break;
             }
 
@@ -1240,8 +1253,8 @@ namespace Emerita
 
         public void LoadFenSideToMove(string fenSideToMove)
         {
-            sideToMove = ChessString.ParseFenColor(fenSideToMove[0]);
-            hash.HashActiveColor(sideToMove);
+            SideToMove = ChessString.ParseFenColor(fenSideToMove[0]);
+            ZobristHash.HashActiveColor(ref hash, sideToMove);
         }
 
         public void LoadFenCastling(string fenCastling)
@@ -1276,7 +1289,7 @@ namespace Emerita
                 }
             }
 
-            hash.HashCastling(castling);
+            ZobristHash.HashCastling(ref hash, castling);
         }
 
         public void LoadFenEnPassant(string fenEnPassant)
@@ -1286,7 +1299,7 @@ namespace Emerita
             if (enPassant.HasValue && IsEnPassantValid(sideToMove))
             {
                 enPassantValidated = enPassant;
-                hash.HashEnPassant(enPassantValidated.Value);
+                ZobristHash.HashEnPassant(ref hash, enPassantValidated.Value);
             }
         }
 
@@ -1388,8 +1401,8 @@ namespace Emerita
                 {
                     return true;
                 }
-
-                bb = ChessMath.ResetLowestSetBit(bb);
+                
+                ChessMath.ResetLowestSetBit(ref bb);
             }
 
             return false;
@@ -1427,10 +1440,10 @@ namespace Emerita
 
         private void HashPiece(int color, int piece, int index)
         {
-            hash.HashPiece(color, piece, index);
+            ZobristHash.HashPiece(ref hash, color, piece, index);
             if (piece == Constants.PIECE_PAWN)
             {
-                pawnHash.HashPiece(color, piece, index);
+                ZobristHash.HashPiece(ref pawnHash, color, piece, index);
             }
         }
 
@@ -1463,7 +1476,7 @@ namespace Emerita
             while (bb != 0)
             {
                 index = ChessMath.LowestSetBitIndex(bb);
-                bb = ChessMath.ResetLowestSetBit(bb);
+                ChessMath.ResetLowestSetBit(ref bb);
                 colors[index] = Constants.COLOR_WHITE;
             }
 
@@ -1471,7 +1484,7 @@ namespace Emerita
             while (bb != 0)
             {
                 index = ChessMath.LowestSetBitIndex(bb);
-                bb = ChessMath.ResetLowestSetBit(bb);
+                ChessMath.ResetLowestSetBit(ref bb);
                 colors[index] = Constants.COLOR_BLACK;
             }
         }

@@ -1,51 +1,33 @@
 ﻿
+using System.Runtime.CompilerServices;
+
 namespace Emerita
 {
-    public struct ZobristHash
+    public static class ZobristHash
     {
-        private ulong hash = 0ul;
-
-        public ZobristHash()
-        { }
-
-        public ZobristHash(ulong hash)
+        public static void HashPiece(ref ulong hash, int color, int piece, int index)
         {
-            Hash = hash;
-        }
-
-        public void Reset()
-        {
-            hash = 0ul;
-        }
-
-        public ulong Hash
-        {
-            get => hash;
-            set => hash = value;
-        }
-
-        public ZobristHash HashPiece(int color, int piece, int index)
-        {
+            Util.Assert(ChessMath.IsValidColor(color));
+            Util.Assert(ChessMath.IsValidPiece(piece));
+            Util.Assert(ChessMath.IsValidIndex(index));
             hash ^= GetPieceKey(color, piece, index);
-            return this;
         }
 
-        public ZobristHash HashActiveColor(int activeColor)
+        public static void HashActiveColor(ref ulong hash, int activeColor)
         {
+            Util.Assert(ChessMath.IsValidColor(activeColor));
             hash ^= GetActiveColorKey(activeColor);
-            return this;
         }
 
-        public ZobristHash HashCastling(CastlingFlags castling)
+        public static void HashCastling(ref ulong hash, CastlingFlags castling)
         {
             hash ^= GetCastleKey(castling);
-            return this;
         }
 
-        public ZobristHash HashEnPassant(int enPassant)
+        public static void HashEnPassant(ref ulong hash, int enPassant)
         {
+            Util.Assert(ChessMath.IsValidIndex(enPassant));
             hash ^= GetEnPassantKey(enPassant);
-            return this;
         }
 
         // indices into rand64 array
@@ -54,8 +36,6 @@ namespace Emerita
         private const int rand64_en_passant_offset = 772;
         private const int rand64_turn_offset = 780;
 
-        public static implicit operator ulong(ZobristHash zh) => zh.Hash;
-        public static explicit operator ZobristHash(ulong hash) => new(hash);
 
         private static readonly ulong[] rand64 = new ulong[781]
 
@@ -481,48 +461,27 @@ namespace Emerita
         };
 
         private static readonly ulong[] activeColorKeys = { rand64[rand64_turn_offset], 0ul };
-        public static ulong GetCastleKeyDeprecated(CastlingFlags castle)
-        {
-            ulong castleKey = 0ul;
-            if (castle != CastlingFlags.None)
-            {
-                if ((castle & CastlingFlags.WhiteKingSide) != 0)
-                {
-                    castleKey ^= rand64[rand64_castle_offset];
-                }
-                if ((castle & CastlingFlags.WhiteQueenSide) != 0)
-                {
-                    castleKey ^= rand64[rand64_castle_offset + 1];
-                }
-                if ((castle & CastlingFlags.BlackKingSide) != 0)
-                {
-                    castleKey ^= rand64[rand64_castle_offset + 2];
-                }
-                if ((castle & CastlingFlags.BlackQueenSide) != 0)
-                {
-                    castleKey ^= rand64[rand64_castle_offset + 3];
-                }
-            }
 
-            return castleKey;
-        }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ulong GetCastleKey(CastlingFlags castle)
         {
             return castleKeys[(int)castle];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ulong GetPieceKey(int color, int piece, int index)
         {
             int pieceKind = ChessMath.PolyglotPiece(color, piece);
             return rand64[rand64_piece_offset + 64 * pieceKind + index];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ulong GetEnPassantKey(int index)
         {
             return rand64[rand64_en_passant_offset + ChessMath.IndexToFile(index)];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ulong GetActiveColorKey(int activeColor)
         {
             return activeColorKeys[activeColor];

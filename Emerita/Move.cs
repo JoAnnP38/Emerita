@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
+using System.Reflection.Metadata.Ecma335;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics.X86;
 using System.Text;
@@ -10,26 +11,15 @@ using System.Threading.Tasks;
 namespace Emerita
 {
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct Move : IEquatable<Move>, IComparable<Move>
+    public readonly struct Move : IEquatable<Move>, IComparable<Move>
     {
-        private sbyte piece;
-        private sbyte from;
-        private sbyte to;
-        private sbyte flags;
-        private sbyte capture;
-        private sbyte promote;
-        private short score;
-
-        public Move()
-        {
-            piece = Constants.PIECE_NONE;
-            from = Constants.D4;
-            to = Constants.D4;
-            flags = (sbyte)MoveFlags.NullMove;
-            capture = Constants.PIECE_NONE;
-            promote = Constants.PIECE_NONE;
-            score = 0;
-        }
+        private readonly sbyte piece;
+        private readonly sbyte from;
+        private readonly sbyte to;
+        private readonly byte flags;
+        private readonly sbyte capture;
+        private readonly sbyte promote;
+        private readonly short score;
 
         public Move(int piece, int from, int to, MoveFlags flags = MoveFlags.Normal, int capture = Constants.PIECE_NONE,
             int promote = Constants.PIECE_NONE, int score = 0)
@@ -37,52 +27,20 @@ namespace Emerita
             this.piece = (sbyte)piece;
             this.from = (sbyte)from;
             this.to = (sbyte)to;
-            this.flags = (sbyte)flags;
+            this.flags = (byte)flags;
             this.capture = (sbyte)capture;
             this.promote = (sbyte)promote;
             this.score = (short)score;
         }
 
-        public int Piece
-        {
-            get => piece;
-            set => piece = (sbyte)value;
-        }
-        public int From
-        {
-            get => from;
-            set => from = (sbyte)value;
-        }
+        public int Piece => piece;
+        public int From => from;
+        public int To => to;
+        public MoveFlags Flags => (MoveFlags)flags;
+        public int Capture => capture;
+        public int Promote => promote;
+        public int Score => score;
 
-        public int To
-        {
-            get => to;
-            set => to = (sbyte)value;
-        }
-
-        public MoveFlags Flags
-        {
-            get => (MoveFlags)flags; 
-            set => flags = (sbyte)value;
-        }
-
-        public int Capture
-        {
-            get => capture; 
-            set => capture = (sbyte)value;
-        }
-
-        public int Promote
-        {
-            get => promote; 
-            set => promote = (sbyte)value;
-        }
-
-        public int Score
-        {
-            get => score; 
-            set => score = (short)value;
-        }
 
         public Move Copy(int newScore = -1)
         {
@@ -91,47 +49,54 @@ namespace Emerita
 
         public bool Equals(Move other)
         {
-            return from == other.from &&
-                   to == other.to &&
-                   flags == other.flags &&
-                   promote == other.promote &&
-                   capture == other.capture &&
-                   score == other.score;
+            return Piece == other.Piece &&
+                   From == other.From &&
+                   To == other.To &&
+                   Flags == other.Flags &&
+                   Promote == other.Promote &&
+                   Capture == other.Capture &&
+                   Score == other.Score;
         }
 
         public int CompareTo(Move other)
         {
-            int compare = from.CompareTo(other.from);
+            int compare = Piece.CompareTo(other.Piece);
             if (compare != 0)
             {
                 return compare;
             }
 
-            compare = to.CompareTo(other.to);
+            compare = From.CompareTo(other.From);
             if (compare != 0)
             {
                 return compare;
             }
 
-            compare = flags.CompareTo(other.flags);
+            compare = To.CompareTo(other.To);
             if (compare != 0)
             {
                 return compare;
             }
 
-            compare = capture.CompareTo(other.capture);
+            compare = Flags.CompareTo(other.Flags);
             if (compare != 0)
             {
                 return compare;
             }
 
-            compare = promote.CompareTo(other.promote);
+            compare = Capture.CompareTo(other.Capture);
             if (compare != 0)
             {
                 return compare;
             }
 
-            return score.CompareTo(other.score);
+            compare = Promote.CompareTo(other.Promote);
+            if (compare != 0)
+            {
+                return compare;
+            }
+
+            return Score.CompareTo(other.Score);
         }
 
         public string ToLongAlgebraic(bool useSeparator = false)
@@ -213,9 +178,10 @@ namespace Emerita
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(from, to, flags, capture, promote, score);
+            return HashCode.Combine(Piece, From, To, Flags, Capture, Promote, Score);
         }
 
-        public static Move NullMove { get; } = new();
+        public static Move NullMove { get; } = 
+            new(Constants.PIECE_NONE, Constants.D4, Constants.D4, MoveFlags.NullMove);
     }
 }

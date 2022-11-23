@@ -92,12 +92,12 @@ namespace Emerita
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ulong ResetBit(ulong bitBoard, int bitIndex)
+        public static void ResetBit(ref ulong bitBoard, int bitIndex)
         {
 #if X64
-            return Bmi1.X64.AndNot(GetMask(bitIndex), bitBoard);
+            bitBoard = Bmi1.X64.AndNot(GetMask(bitIndex), bitBoard);
 #else
-            return bitBoard & ~GetMask(bitIndex);
+            bitBoard &= ~GetMask(bitIndex);
 #endif
         }
 
@@ -128,12 +128,12 @@ namespace Emerita
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ulong ResetLowestSetBit(ulong bitBoard)
+        public static void ResetLowestSetBit(ref ulong bitBoard)
         {
 #if X64
-            return Bmi1.X64.ResetLowestSetBit(bitBoard);
+            bitBoard = Bmi1.X64.ResetLowestSetBit(bitBoard);
 #else
-            return ResetBit(bitBoard, LowestSetBitIndex(bitBoard));
+            ResetBit(ref bitBoard, LowestSetBitIndex(bitBoard));
 #endif
         }
 

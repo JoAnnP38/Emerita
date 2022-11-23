@@ -4,7 +4,6 @@ using System.Linq;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Threading.Tasks;
-using loTechCS.Chess;
 
 namespace Emerita
 {
@@ -43,13 +42,7 @@ namespace Emerita
             int capture = Constants.PIECE_NONE,
             int promote = Constants.PIECE_NONE, int score = 0)
         {
-            moves[insertIndex].Piece = piece;
-            moves[insertIndex].From = from;
-            moves[insertIndex].To = to;
-            moves[insertIndex].Flags = flags;
-            moves[insertIndex].Capture = capture;
-            moves[insertIndex].Promote = promote;
-            moves[insertIndex++].Score = score;
+            moves[insertIndex++] = new Move(piece, from, to, flags, capture, promote, score);
         }
 
         public Span<Move> GetMoves(int ply)

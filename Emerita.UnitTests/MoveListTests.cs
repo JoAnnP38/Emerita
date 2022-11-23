@@ -50,8 +50,8 @@ namespace Emerita.UnitTests
         {
             MoveList moveList = new();
             moveList.StartPly(0);
-            Move m1 = new Move(Constants.PIECE_PAWN, Constants.A2, Constants.A3, MoveFlags.PawnMove);
-            Move m2 = new Move(Constants.PIECE_PAWN, Constants.A2, Constants.A4, MoveFlags.DblPawnMove);
+            Move m1 = new(Constants.PIECE_PAWN, Constants.A2, Constants.A3, MoveFlags.PawnMove);
+            Move m2 = new(Constants.PIECE_PAWN, Constants.A2, Constants.A4, MoveFlags.DblPawnMove);
             moveList.Add(m1);
             moveList.Add(m2);
             moveList.EndPly();

@@ -21,7 +21,7 @@ namespace Emerita
             board.LoadNewGamePosition();
         }
 
-        public ulong Execute(int depth)
+        public unsafe ulong Execute(int depth)
         {
             if (depth == 0)
             {
@@ -32,12 +32,15 @@ namespace Emerita
 
             board.GenerateMoves(moveList);
             Span<Move> moves = moveList.GetMoves(board.Ply);
-            for (int i = 0; i < moves.Length; ++i)
+            fixed (Move* p = &moves[0])
             {
-                if (board.MakeMove(moves[i]))
+                for (int i = 0; i < moves.Length; ++i)
                 {
-                    nodes += Execute(depth - 1);
-                    board.UnmakeMove();
+                    if (board.MakeMove(p[i]))
+                    {
+                        nodes += Execute(depth - 1);
+                        board.UnmakeMove();
+                    }
                 }
             }
 

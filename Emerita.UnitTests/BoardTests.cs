@@ -74,7 +74,7 @@ namespace Emerita.UnitTests
             while (bb != 0)
             {
                 locs.Add(ChessMath.LowestSetBitIndex(bb));
-                bb = ChessMath.ResetLowestSetBit(bb);
+                ChessMath.ResetLowestSetBit(ref bb);
             }
 
             bool allExpectedInSet = locations.All(sq => locs.Contains(sq));

@@ -48,6 +48,13 @@ namespace Emerita
             Array.Clear(stack);
         }
 
+        public void Copy(SimpleStack<T> other)
+        {
+            Util.Assert(stack.Length == other.stack.Length);
+            Array.Copy(other.stack, stack, stack.Length);
+            stackPointer = other.stackPointer;
+        }
+
         public T Peek()
         {
             Util.Assert(stackPointer > 0);

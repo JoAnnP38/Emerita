@@ -147,6 +147,20 @@ namespace Emerita
 #endif
         }
 
+        public static int GreatestPowerOfTwoLessThan(int n)
+        {
+            int v = n;
+            v--;
+            v |= v >> 1;
+            v |= v >> 2;
+            v |= v >> 4;
+            v |= v >> 8;
+            v |= v >> 16;
+            v++; // next power of 2
+
+            return v >> 1; // previous power of 2
+        }
+
         private static readonly int[] lsb64Table =
         {
             63, 30,  3, 32, 59, 14, 11, 33,

@@ -4,10 +4,11 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Emerita
 {
-    public sealed class BitBoardArray2D
+    public sealed class BitBoardArray2D : ICloneable
     {
         private readonly ulong[] array;
         private readonly int length1;
@@ -60,5 +61,22 @@ namespace Emerita
         }
 
         public Span<ulong> this[int i] => new(array, i * length2, length2);
+
+        public void Copy(BitBoardArray2D other)
+        {
+            Util.Assert(length1 == other.length1 && length2 == other.length2);
+            Array.Copy(other.array, array, array.Length);
+        }
+        public BitBoardArray2D Clone()
+        {
+            BitBoardArray2D clone = new(length1, length2);
+            Array.Copy(array, clone.array, clone.array.Length);
+            return clone;
+        }
+
+        object ICloneable.Clone()
+        {
+            return Clone();
+        }
     }
 }

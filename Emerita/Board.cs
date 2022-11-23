@@ -16,7 +16,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Emerita
 {
-    public sealed class Board
+    public sealed class Board : ICloneable
     {
         #region Current Board State
 
@@ -707,6 +707,34 @@ namespace Emerita
             boardStateStack.Clear();
             history.Clear();
             repeatStack.Clear();
+        }
+
+        public Board Clone()
+        {
+            Board clone = new();
+            Array.Copy(board, clone.board, clone.board.Length);
+            clone.bbaPieces.Copy(bbaPieces);
+            Array.Copy(bbaUnits, clone.bbaUnits, clone.bbaUnits.Length);
+            clone.bbAll = bbAll;
+            clone.ply = ply;
+            clone.halfMoveClock = halfMoveClock;
+            clone.fullMoveCounter = fullMoveCounter;
+            clone.castling = castling;
+            clone.enPassant = enPassant;
+            clone.enPassantValidated = enPassantValidated;
+            clone.sideToMove = sideToMove;
+            clone.opponent = opponent;
+            clone.hash = hash;
+            clone.pawnHash = pawnHash;
+            clone.history.Copy(history);
+            clone.boardStateStack.Copy(boardStateStack);
+            clone.repeatStack.Copy(repeatStack);
+            return clone;
+        }
+
+        object ICloneable.Clone()
+        {
+            return Clone();
         }
 
         #region Move Generation

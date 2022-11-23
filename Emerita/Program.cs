@@ -19,14 +19,48 @@ namespace Emerita
             Perft perft = new();
             Stopwatch watch = new();
 
-            for (int depth = 0; depth < 7; ++depth)
+            Console.WriteLine("Single threaded results:");
+            for (int depth = 1; depth < 7; ++depth)
             {
-                watch.Start();
+                watch.Restart();
                 ulong actual = perft.Execute(depth);
                 watch.Stop();
-                Console.WriteLine($"{depth}: Elapsed = {watch.Elapsed}");
+                double Mnps = (double)actual / (watch.Elapsed.TotalSeconds * 1000000.0D);
+                Console.WriteLine($"{depth}: Elapsed = {watch.Elapsed}, Mnps: {Mnps,7:N2}, nodes = {actual}");
             }
 
+            Perft.NumTasks = 2;
+            Console.WriteLine($"\nMulti-threaded results ({Perft.NumTasks} threads):");
+            for (int depth = 1; depth < 7; ++depth)
+            {
+                watch.Restart();
+                ulong actual = perft.ExecuteMt(depth);
+                watch.Stop();
+                double Mnps = (double)actual / (watch.Elapsed.TotalSeconds * 1000000.0D);
+                Console.WriteLine($"{depth}: Elapsed = {watch.Elapsed}, Mnps: {Mnps,7:N2}, Nodes = {actual}");
+            }
+
+            Perft.NumTasks = 4;
+            Console.WriteLine($"\nMulti-threaded results ({Perft.NumTasks} threads):");
+            for (int depth = 1; depth < 7; ++depth)
+            {
+                watch.Restart();
+                ulong actual = perft.ExecuteMt(depth);
+                watch.Stop();
+                double Mnps = (double)actual / (watch.Elapsed.TotalSeconds * 1000000.0D);
+                Console.WriteLine($"{depth}: Elapsed = {watch.Elapsed}, Mnps: {Mnps,7:N2}, Nodes = {actual}");
+            }
+
+            Perft.NumTasks = 8;
+            Console.WriteLine($"\nMulti-threaded results ({Perft.NumTasks} threads):");
+            for (int depth = 1; depth < 7; ++depth)
+            {
+                watch.Restart();
+                ulong actual = perft.ExecuteMt(depth);
+                watch.Stop();
+                double Mnps = (double)actual / (watch.Elapsed.TotalSeconds * 1000000.0D);
+                Console.WriteLine($"{depth}: Elapsed = {watch.Elapsed}, Mnps: {Mnps,7:N2}, Nodes = {actual}");
+            }
         }
     }
 }

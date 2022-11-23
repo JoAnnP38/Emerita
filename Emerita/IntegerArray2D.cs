@@ -55,5 +55,11 @@ namespace Emerita
 
         public Span<int> this[int i] => new(array, i * length2, length2);
 
+        public void Copy(IntegerArray2D other)
+        {
+            Util.Assert(length1 == other.length1 && length2 == other.length2);
+            Array.Copy(other.array, array, array.Length);
+        }
+
     }
 }

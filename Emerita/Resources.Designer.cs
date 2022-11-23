@@ -59,15 +59,5 @@ namespace Emerita {
                 resourceCulture = value;
             }
         }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] Book {
-            get {
-                object obj = ResourceManager.GetObject("Book", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
     }
 }

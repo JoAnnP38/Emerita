@@ -6,6 +6,8 @@ namespace Emerita.UnitTests
     [TestClass]
     public class ChessMathTests
     {
+        public TestContext? TestContext { get; set; }
+
         [TestMethod]
         public void IsValidIndexTest()
         {
@@ -74,6 +76,14 @@ namespace Emerita.UnitTests
             Assert.AreEqual(Constants.G5, index);
         }
 
+        [TestMethod]
+        public void IntrinsicTest()
+        {
+            int actual = ChessMath.TrailingZeroCount(0);
+            Assert.AreEqual(64, actual);
 
+            actual = ChessMath.LeadingZeroCount(0);
+            Assert.AreEqual(64, actual);
+        }
     }
 }

@@ -36,9 +36,8 @@ namespace Emerita
         private static readonly BitBoardArray2D bbaPawnMoves = new(Constants.MAX_COLORS, Constants.MAX_SQUARES);
         private static readonly BitBoardArray2D bbaPieceMoves = new(Constants.MAX_PIECES, Constants.MAX_SQUARES);
         private static readonly BitBoardArray2D bbaBetween = new(Constants.MAX_SQUARES, Constants.MAX_SQUARES);
-        //private static readonly BitBoardArray2D bbaVectorBits = new(Constants.MAX_SQUARES, Constants.MAX_SQUARES);
-        //private static readonly BitBoardArray2D bbaMaskVectors = new(Constants.MAX_SQUARES, Constants.MAX_DIRECTIONS);
-        private static readonly Ray[] maskVectors = new Ray[Constants.MAX_SQUARES];
+        private static readonly Ray[] maskVectors = new Ray[Constants.MAX_SQUARES + 1];
+        private static readonly Ray[] revMaskVectors = new Ray[Constants.MAX_SQUARES + 1];
         private static readonly BitBoardArray2D bbaMaskPassed = new(Constants.MAX_COLORS, Constants.MAX_SQUARES);
         private static readonly BitBoardArray2D bbaMaskPath = new(Constants.MAX_COLORS, Constants.MAX_SQUARES);
         private static readonly ulong[] bbaMask = new ulong[Constants.MAX_SQUARES];
@@ -471,7 +470,7 @@ namespace Emerita
                         raySouthEast = bbaVectorBits[x, GetEdge(x, -7)];
                     }
 
-                    maskVectors[x] = new Ray(rayNorth, rayNorthEast, rayEast, raySouthEast, raySouth, raySouthWest, rayWest, rayNorthWest);
+                    maskVectors[x] = revMaskVectors[63 - x] = new Ray(rayNorth, rayNorthEast, rayEast, raySouthEast, raySouth, raySouthWest, rayWest, rayNorthWest);
 
                     #endregion
 
@@ -837,7 +836,7 @@ namespace Emerita
                 from = ChessMath.TrailingZeroCount(bb1);
                 ChessMath.ResetLowestSetBit(ref bb1);
 
-                bb2 = GetBishopAttacks(from);
+                bb2 = GetBishopAttacksBranchless(from);
                 bb3 = ChessMath.AndNot(bb2, bbAll);
 
                 while (bb3 != 0)
@@ -863,7 +862,7 @@ namespace Emerita
                 from = ChessMath.TrailingZeroCount(bb1);
                 ChessMath.ResetLowestSetBit(ref bb1);
 
-                bb2 = GetRookAttacks(from);
+                bb2 = GetRookAttacksBranchless(from);
                 bb3 = ChessMath.AndNot(bb2, bbAll);
 
                 while (bb3 != 0)
@@ -889,7 +888,7 @@ namespace Emerita
                 from = ChessMath.TrailingZeroCount(bb1);
                 ChessMath.ResetLowestSetBit(ref bb1);
 
-                bb2 = GetBishopAttacks(from) | GetRookAttacks(from);
+                bb2 = GetBishopAttacksBranchless(from) | GetRookAttacksBranchless(from);
                 bb3 = ChessMath.AndNot(bb2, bbAll);
 
                 while (bb3 != 0)
@@ -999,6 +998,27 @@ namespace Emerita
                         score: history[Constants.E8, Constants.C8]);
                 }
             }
+        }
+
+        public ulong GetBishopAttacksBranchless(int from)
+        {
+            Ray ray = maskVectors[from];
+            ulong bb = ChessMath.AndNot(ray.NorthEast, maskVectors[ChessMath.TrailingZeroCount(ray.NorthEast & bbAll)].NorthEast) |
+                       ChessMath.AndNot(ray.NorthWest, maskVectors[ChessMath.TrailingZeroCount(ray.NorthWest & bbAll)].NorthWest) |
+                       ChessMath.AndNot(ray.SouthEast, revMaskVectors[ChessMath.LeadingZeroCount(ray.SouthEast & bbAll)].SouthEast) |
+                       ChessMath.AndNot(ray.SouthWest, revMaskVectors[ChessMath.LeadingZeroCount(ray.SouthWest & bbAll)].SouthWest);
+            return bb;
+        }
+
+        public ulong GetRookAttacksBranchless(int from)
+        {
+            Ray ray = maskVectors[from];
+            ulong bb = ChessMath.AndNot(ray.North, maskVectors[ChessMath.TrailingZeroCount(ray.North & bbAll)].North) |
+                       ChessMath.AndNot(ray.East, maskVectors[ChessMath.TrailingZeroCount(ray.East & bbAll)].East) |
+                       ChessMath.AndNot(ray.South, revMaskVectors[ChessMath.LeadingZeroCount(ray.South & bbAll)].South) |
+                       ChessMath.AndNot(ray.West, revMaskVectors[ChessMath.LeadingZeroCount(ray.West & bbAll)].West);
+
+            return bb;
         }
 
         public ulong GetBishopAttacks(int from)

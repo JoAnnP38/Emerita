@@ -36,7 +36,14 @@ namespace Emerita
             {
                 if (board.MakeMove(moves[i]))
                 {
-                    nodes += Execute(depth - 1);
+                    if (depth > 1)
+                    {
+                        nodes += Execute(depth - 1);
+                    }
+                    else
+                    {
+                        nodes++;
+                    }
                     board.UnmakeMove();
                 }
             }
@@ -82,7 +89,14 @@ namespace Emerita
                 {
                     if (bd.MakeMove(move))
                     {
-                        nodes += Execute2(bd, mvList, depth - 1);
+                        if (depth > 1)
+                        {
+                            nodes += Execute2(bd, mvList, depth - 1);
+                        }
+                        else
+                        {
+                            nodes++;
+                        }
                         bd.UnmakeMove();
                     }
                 }
@@ -120,9 +134,13 @@ namespace Emerita
                             ttPerftTable.Add(bd.Hash, depth, count);
                         }
                     }
-                    else
+                    else if (depth > 1)
                     {
                         nodes += Execute2(bd, mvList, depth - 1);
+                    }
+                    else
+                    {
+                        nodes++;
                     }
                     bd.UnmakeMove();
                 }

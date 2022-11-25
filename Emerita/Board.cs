@@ -1,18 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Drawing;
-using System.Linq;
-using System.Reflection;
-using System.Reflection.Metadata.Ecma335;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography;
-using System.Text;
+﻿using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using System.Threading.Tasks.Sources;
-using Microsoft.Extensions.Logging;
 
 namespace Emerita
 {
@@ -47,14 +34,11 @@ namespace Emerita
         private static readonly BitBoardArray2D bbaLeft = new(Constants.MAX_COLORS, Constants.MAX_SQUARES);
         private static readonly BitBoardArray2D bbaRight = new(Constants.MAX_COLORS, Constants.MAX_SQUARES);
         private static readonly BitBoardArray2D bbaPawnMoves = new(Constants.MAX_COLORS, Constants.MAX_SQUARES);
-        private static readonly ulong[] bbaKnightMoves = new ulong[Constants.MAX_SQUARES];
-        private static readonly ulong[] bbaBishopMoves = new ulong[Constants.MAX_SQUARES];
-        private static readonly ulong[] bbaRookMoves = new ulong[Constants.MAX_SQUARES];
-        private static readonly ulong[] bbaQueenMoves = new ulong[Constants.MAX_SQUARES];
-        private static readonly ulong[] bbaKingMoves = new ulong[Constants.MAX_SQUARES];
+        private static readonly BitBoardArray2D bbaPieceMoves = new(Constants.MAX_PIECES, Constants.MAX_SQUARES);
         private static readonly BitBoardArray2D bbaBetween = new(Constants.MAX_SQUARES, Constants.MAX_SQUARES);
-        private static readonly BitBoardArray2D bbaVectorBits = new(Constants.MAX_SQUARES, Constants.MAX_SQUARES);
-        private static readonly BitBoardArray2D bbaMaskVectors = new(Constants.MAX_SQUARES, Constants.MAX_DIRECTIONS);
+        //private static readonly BitBoardArray2D bbaVectorBits = new(Constants.MAX_SQUARES, Constants.MAX_SQUARES);
+        //private static readonly BitBoardArray2D bbaMaskVectors = new(Constants.MAX_SQUARES, Constants.MAX_DIRECTIONS);
+        private static readonly Ray[] maskVectors = new Ray[Constants.MAX_SQUARES];
         private static readonly BitBoardArray2D bbaMaskPassed = new(Constants.MAX_COLORS, Constants.MAX_SQUARES);
         private static readonly BitBoardArray2D bbaMaskPath = new(Constants.MAX_COLORS, Constants.MAX_SQUARES);
         private static readonly ulong[] bbaMask = new ulong[Constants.MAX_SQUARES];
@@ -66,6 +50,7 @@ namespace Emerita
         private static readonly ulong bbMaskQueenSide;
         private static readonly ulong bbNotAFile;
         private static readonly ulong bbNotHFile;
+        private static readonly ulong bbEdges;
         private static readonly IntegerArray2D pawnLeft = new(Constants.MAX_COLORS, Constants.MAX_SQUARES);
         private static readonly IntegerArray2D pawnRight = new(Constants.MAX_COLORS, Constants.MAX_SQUARES);
         private static readonly IntegerArray2D pawnPlus = new(Constants.MAX_COLORS, Constants.MAX_SQUARES);
@@ -192,11 +177,12 @@ namespace Emerita
         {
             try
             {
+                BitBoardArray2D bbaVectorBits = new(Constants.MAX_SQUARES, Constants.MAX_SQUARES);
                 for (int x = 0; x < Constants.MAX_SQUARES; ++x)
                 {
                     ChessMath.IndexToCoords(x, out int xFile, out int xRank);
 
-                    #region Initialize bbMaskKingSide, bbMaskQueenSide
+                    #region Initialize bbMaskKingSide, bbMaskQueenSide, bbEdges
 
                     if (xFile < 2)
                     {
@@ -207,9 +193,15 @@ namespace Emerita
                         bbMaskKingSide = ChessMath.SetBit(bbMaskKingSide, x);
                     }
 
+                    if (xFile == Constants.MIN_COORD || xFile == Constants.MAX_COORD || 
+                        xRank == Constants.MIN_COORD || xRank == Constants.MAX_COORD)
+                    {
+                        bbEdges = ChessMath.SetBit(bbEdges, x);
+                    }
+
                     #endregion
 
-                    #region Initialize bbaMaskPassed, bbaMaskIsolated, bbaMaskPath, bbaMaskFiles, bbaBetween, bbaVectorBits
+                    #region Initialize bbaMaskPassed, bbaMaskIsolated, bbaMaskPath, bbaMaskFiles, bbaBetween, bbaVectorBits, bbaAfter
 
                     for (int y = 0; y < Constants.MAX_SQUARES; ++y)
                     {
@@ -451,32 +443,35 @@ namespace Emerita
                 {
                     ChessMath.IndexToCoords(x, out int xFile, out int xRank);
 
-                    #region Initialize bbaMaskVectors
+                    #region Initialize maskVectors
 
-                    bbaMaskVectors[x, Constants.DIR_N] = bbaVectorBits[x, 56 + xFile];
-                    bbaMaskVectors[x, Constants.DIR_S] = bbaVectorBits[x, xFile];
-                    bbaMaskVectors[x, Constants.DIR_W] = bbaVectorBits[x, xRank << 3];
-                    bbaMaskVectors[x, Constants.DIR_E] = bbaVectorBits[x, (xRank << 3) + 7];
+                    ulong rayNorth = bbaVectorBits[x, 56 + xFile];
+                    ulong raySouth = bbaVectorBits[x, xFile];
+                    ulong rayWest = bbaVectorBits[x, xRank << 3];
+                    ulong rayEast = bbaVectorBits[x, (xRank << 3) + 7];
+                    ulong rayNorthWest = 0ul, rayNorthEast = 0ul, raySouthWest = 0ul, raySouthEast = 0ul;
 
                     if (xFile > 0 && xRank < 7)
                     {
-                        bbaMaskVectors[x, Constants.DIR_NW] = bbaVectorBits[x, GetEdge(x, 7)];
+                        rayNorthWest = bbaVectorBits[x, GetEdge(x, 7)];
                     }
 
                     if (xFile < 7 && xRank < 7)
                     {
-                        bbaMaskVectors[x, Constants.DIR_NE] = bbaVectorBits[x, GetEdge(x, 9)];
+                        rayNorthEast = bbaVectorBits[x, GetEdge(x, 9)];
                     }
 
                     if (xFile > 0 && xRank > 0)
                     {
-                        bbaMaskVectors[x, Constants.DIR_SW] = bbaVectorBits[x, GetEdge(x, -9)];
+                        raySouthWest = bbaVectorBits[x, GetEdge(x, -9)];
                     }
 
                     if (xFile < 7 && xRank > 0)
                     {
-                        bbaMaskVectors[x, Constants.DIR_SE] = bbaVectorBits[x, GetEdge(x, -7)];
+                        raySouthEast = bbaVectorBits[x, GetEdge(x, -7)];
                     }
+
+                    maskVectors[x] = new Ray(rayNorth, rayNorthEast, rayEast, raySouthEast, raySouth, raySouthWest, rayWest, rayNorthWest);
 
                     #endregion
 
@@ -576,18 +571,18 @@ namespace Emerita
                     #endregion
                 }
 
-                #region Initialize bbaKnightMoves, bbaKingMoves, bbaQrbMoves
+                #region Initialize bbaPieceMoves
 
                 for (int x = 0; x < Constants.MAX_SQUARES; ++x)
                 {
                     for (int k = 0; k < Constants.MAX_DIRECTIONS && knightMoves[x, k] != -1; ++k)
                     {
-                        bbaKnightMoves[x] |= bbaMask[knightMoves[x, k]];
+                        bbaPieceMoves[Constants.PIECE_KNIGHT, x] |= bbaMask[knightMoves[x, k]];
                     }
 
                     for (int k = 0; k < Constants.MAX_DIRECTIONS && kingMoves[x, k] != -1; ++k)
                     {
-                        bbaKingMoves[x] |= bbaMask[kingMoves[x, k]];
+                        bbaPieceMoves[Constants.PIECE_KING, x] |= bbaMask[kingMoves[x, k]];
                     }
 
                     ChessMath.IndexToCoords(x, out int xFile, out int xRank);
@@ -602,14 +597,14 @@ namespace Emerita
 
                         if (nwDiag[x] == nwDiag[y] || neDiag[x] == neDiag[y])
                         {
-                            bbaBishopMoves[x] |= bbaMask[y];
-                            bbaQueenMoves[x] |= bbaMask[y];
+                            bbaPieceMoves[Constants.PIECE_BISHOP, x] |= bbaMask[y];
+                            bbaPieceMoves[Constants.PIECE_QUEEN, x] |= bbaMask[y];
                         }
 
                         if (xRank == yRank || xFile == yFile)
                         {
-                            bbaRookMoves[x] |= bbaMask[y];
-                            bbaQueenMoves[x] |= bbaMask[y];
+                            bbaPieceMoves[Constants.PIECE_ROOK, x] |= bbaMask[y];
+                            bbaPieceMoves[Constants.PIECE_QUEEN, x] |= bbaMask[y];
                         }
                     }
 
@@ -659,7 +654,12 @@ namespace Emerita
             return bbaUnits[color];
         }
         public ulong All => bbAll;
-        public int Ply => ply;
+
+        public int Ply
+        {
+            get => ply;
+            set => ply = value;
+        }
         public int HalfMoveClock => halfMoveClock;
         public int FullMoveCounter => fullMoveCounter;
         public CastlingFlags Castling => castling;
@@ -768,7 +768,7 @@ namespace Emerita
 
             while (bb1 != 0)
             {
-                from = ChessMath.LowestSetBitIndex(bb1);
+                from = ChessMath.TrailingZeroCount(bb1);
                 ChessMath.ResetLowestSetBit(ref bb1);
                 to = pawnLeft[sideToMove, from];
                 AddPawnMove(moveList, from, to, MoveFlags.Capture, capture: board[to],
@@ -777,7 +777,7 @@ namespace Emerita
 
             while (bb2 != 0)
             {
-                from = ChessMath.LowestSetBitIndex(bb2);
+                from = ChessMath.TrailingZeroCount(bb2);
                 ChessMath.ResetLowestSetBit(ref bb2);
                 to = pawnRight[sideToMove, from];
                 AddPawnMove(moveList, from, to, MoveFlags.Capture, capture: board[to],
@@ -786,7 +786,7 @@ namespace Emerita
 
             while (bb3 != 0)
             {
-                from = ChessMath.LowestSetBitIndex(bb3);
+                from = ChessMath.TrailingZeroCount(bb3);
                 ChessMath.ResetLowestSetBit(ref bb3);
                 to = pawnPlus[sideToMove, from];
                 AddPawnMove(moveList, from, to, score: history[from, to]);
@@ -794,7 +794,7 @@ namespace Emerita
 
             while (bb4 != 0)
             {
-                from = ChessMath.LowestSetBitIndex(bb4);
+                from = ChessMath.TrailingZeroCount(bb4);
                 ChessMath.ResetLowestSetBit(ref bb4);
                 to = pawnDouble[sideToMove, from];
                 moveList.Add(Constants.PIECE_PAWN, from, to, MoveFlags.DblPawnMove, score: history[from, to]);
@@ -807,21 +807,21 @@ namespace Emerita
             bb1 = bbaPieces[sideToMove, Constants.PIECE_KNIGHT];
             while (bb1 != 0)
             {
-                from = ChessMath.LowestSetBitIndex(bb1);
+                from = ChessMath.TrailingZeroCount(bb1);
                 ChessMath.ResetLowestSetBit(ref bb1);
-                bb2 = bbaKnightMoves[from] & bbaUnits[OpponentColor];
+                bb2 = bbaPieceMoves[Constants.PIECE_KNIGHT, from] & bbaUnits[OpponentColor];
                 while (bb2 != 0)
                 {
-                    to = ChessMath.LowestSetBitIndex(bb2);
+                    to = ChessMath.TrailingZeroCount(bb2);
                     ChessMath.ResetLowestSetBit(ref bb2);
                     moveList.Add(Constants.PIECE_KNIGHT, from, to, MoveFlags.Capture, capture: board[to],
                         score: captureScores[board[to], Constants.PIECE_KNIGHT]);
                 }
 
-                bb2 = ChessMath.AndNot(bbaKnightMoves[from], bbAll);
+                bb2 = ChessMath.AndNot(bbaPieceMoves[Constants.PIECE_KNIGHT, from], bbAll);
                 while (bb2 != 0)
                 {
-                    to = ChessMath.LowestSetBitIndex(bb2);
+                    to = ChessMath.TrailingZeroCount(bb2);
                     ChessMath.ResetLowestSetBit(ref bb2);
                     moveList.Add(Constants.PIECE_KNIGHT, from, to, score: history[from, to]);
                 }
@@ -829,84 +829,83 @@ namespace Emerita
 
             #endregion
 
-            #region Generate Bishop Moves
+            #region Generate Sliding Piece Moves
 
             bb1 = bbaPieces[sideToMove, Constants.PIECE_BISHOP];
             while (bb1 != 0)
             {
-                from = ChessMath.LowestSetBitIndex(bb1);
+                from = ChessMath.TrailingZeroCount(bb1);
                 ChessMath.ResetLowestSetBit(ref bb1);
-                for (int dir = Constants.DIR_NE; dir < Constants.MAX_DIRECTIONS; dir += 2)
+
+                bb2 = GetBishopAttacks(from);
+                bb3 = ChessMath.AndNot(bb2, bbAll);
+
+                while (bb3 != 0)
                 {
-                    for (to = qrbMoves[from, dir]; to > -1; to = qrbMoves[to, dir])
-                    {
-                        if ((bbaMask[to] & bbAll) != 0)
-                        {
-                            if ((bbaMask[to] & bbaUnits[OpponentColor]) != 0)
-                            {
-                                moveList.Add(Constants.PIECE_BISHOP, from, to, MoveFlags.Capture,
-                                    capture: board[to], score: captureScores[board[to], Constants.PIECE_BISHOP]);
-                            }
-                            break;
-                        }
-                        moveList.Add(Constants.PIECE_BISHOP, from, to, score: history[from, to]);
-                    }
+                    to = ChessMath.TrailingZeroCount(bb3);
+                    ChessMath.ResetLowestSetBit(ref bb3);
+                    moveList.Add(Constants.PIECE_BISHOP, from, to, score: history[from, to]);
+                }
+
+                bb3 = bb2 & bbaUnits[OpponentColor];
+
+                while (bb3 != 0)
+                {
+                    to = ChessMath.TrailingZeroCount(bb3);
+                    ChessMath.ResetLowestSetBit(ref bb3);
+                    moveList.Add(Constants.PIECE_BISHOP, from, to, MoveFlags.Capture, capture: board[to], score: captureScores[board[to], Constants.PIECE_BISHOP]);
                 }
             }
-
-            #endregion
-
-            #region Generate Rook Moves
 
             bb1 = bbaPieces[sideToMove, Constants.PIECE_ROOK];
             while (bb1 != 0)
             {
-                from = ChessMath.LowestSetBitIndex(bb1);
+                from = ChessMath.TrailingZeroCount(bb1);
                 ChessMath.ResetLowestSetBit(ref bb1);
-                for (int dir = Constants.DIR_N; dir < Constants.MAX_DIRECTIONS; dir += 2)
-                {
-                    for (to = qrbMoves[from, dir]; to > -1; to = qrbMoves[to, dir])
-                    {
-                        if ((bbaMask[to] & bbAll) != 0)
-                        {
-                            if ((bbaMask[to] & bbaUnits[OpponentColor]) != 0)
-                            {
-                                moveList.Add(Constants.PIECE_ROOK, from, to, MoveFlags.Capture,
-                                    capture: board[to], score: captureScores[board[to], Constants.PIECE_ROOK]);
-                            }
 
-                            break;
-                        }
-                        moveList.Add(Constants.PIECE_ROOK, from, to, score: history[from, to]);
-                    }
+                bb2 = GetRookAttacks(from);
+                bb3 = ChessMath.AndNot(bb2, bbAll);
+
+                while (bb3 != 0)
+                {
+                    to = ChessMath.TrailingZeroCount(bb3);
+                    ChessMath.ResetLowestSetBit(ref bb3);
+                    moveList.Add(Constants.PIECE_ROOK, from, to, score: history[from, to]);
+                }
+
+                bb3 = bb2 & bbaUnits[OpponentColor];
+
+                while (bb3 != 0)
+                {
+                    to = ChessMath.TrailingZeroCount(bb3);
+                    ChessMath.ResetLowestSetBit(ref bb3);
+                    moveList.Add(Constants.PIECE_ROOK, from, to, MoveFlags.Capture, capture: board[to], score: captureScores[board[to], Constants.PIECE_ROOK]);
                 }
             }
-
-            #endregion
-
-            #region Generate Queen Moves
 
             bb1 = bbaPieces[sideToMove, Constants.PIECE_QUEEN];
             while (bb1 != 0)
             {
-                from = ChessMath.LowestSetBitIndex(bb1);
+                from = ChessMath.TrailingZeroCount(bb1);
                 ChessMath.ResetLowestSetBit(ref bb1);
-                for (int dir = Constants.DIR_N; dir < Constants.MAX_DIRECTIONS; ++dir)
-                {
-                    for (to = qrbMoves[from, dir]; to > -1; to = qrbMoves[to, dir])
-                    {
-                        if ((bbaMask[to] & bbAll) != 0)
-                        {
-                            if ((bbaMask[to] & bbaUnits[OpponentColor]) != 0)
-                            {
-                                moveList.Add(Constants.PIECE_QUEEN, from, to, MoveFlags.Capture,
-                                    capture: board[to], score: captureScores[board[to], Constants.PIECE_QUEEN]);
-                            }
 
-                            break;
-                        }
-                        moveList.Add(Constants.PIECE_QUEEN, from, to, score: history[from, to]);
-                    }
+                bb2 = GetBishopAttacks(from) | GetRookAttacks(from);
+                bb3 = ChessMath.AndNot(bb2, bbAll);
+
+                while (bb3 != 0)
+                {
+                    to = ChessMath.TrailingZeroCount(bb3);
+                    ChessMath.ResetLowestSetBit(ref bb3);
+                    moveList.Add(Constants.PIECE_QUEEN, from, to, score: history[from, to]);
+                }
+
+                bb3 = bb2 & bbaUnits[OpponentColor];
+
+                while (bb3 != 0)
+                {
+                    to = ChessMath.TrailingZeroCount(bb3);
+                    ChessMath.ResetLowestSetBit(ref bb3);
+                    moveList.Add(Constants.PIECE_QUEEN, from, to, MoveFlags.Capture, capture: board[to], score: captureScores[board[to], Constants.PIECE_QUEEN]);
                 }
             }
 
@@ -914,20 +913,20 @@ namespace Emerita
 
             #region Generate King Moves
 
-            from = ChessMath.LowestSetBitIndex(bbaPieces[sideToMove, Constants.PIECE_KING]);
-            bb1 = bbaKingMoves[from] & bbaUnits[OpponentColor];
+            from = ChessMath.TrailingZeroCount(bbaPieces[sideToMove, Constants.PIECE_KING]);
+            bb1 = bbaPieceMoves[Constants.PIECE_KING, from] & bbaUnits[OpponentColor];
             while (bb1 != 0)
             {
-                to = ChessMath.LowestSetBitIndex(bb1);
+                to = ChessMath.TrailingZeroCount(bb1);
                 ChessMath.ResetLowestSetBit(ref bb1);
                 moveList.Add(Constants.PIECE_KING, from, to, MoveFlags.Capture, capture: board[to],
                     score: captureScores[board[to], Constants.PIECE_KING]);
             }
 
-            bb1 = ChessMath.AndNot(bbaKingMoves[from], bbAll);
+            bb1 = ChessMath.AndNot(bbaPieceMoves[Constants.PIECE_KING, from], bbAll);
             while (bb1 != 0)
             {
-                to = ChessMath.LowestSetBitIndex(bb1);
+                to = ChessMath.TrailingZeroCount(bb1);
                 ChessMath.ResetLowestSetBit(ref bb1);
                 moveList.Add(Constants.PIECE_KING, from, to, score: history[from, to]);
             }
@@ -961,7 +960,7 @@ namespace Emerita
                 ulong bb = bbaPawnDefends[sideToMove, enPassantValidated.Value] & bbaPieces[sideToMove, Constants.PIECE_PAWN];
                 while (bb != 0)
                 {
-                    int from = ChessMath.LowestSetBitIndex(bb);
+                    int from = ChessMath.TrailingZeroCount(bb);
                     ChessMath.ResetLowestSetBit(ref bb);
                     int captIndex = enPassantValidated.Value + epOffset[sideToMove];
                     moveList.Add(Constants.PIECE_PAWN, from, enPassantValidated.Value, MoveFlags.EnPassant,
@@ -1002,9 +1001,87 @@ namespace Emerita
             }
         }
 
-        #endregion
+        public ulong GetBishopAttacks(int from)
+        {
+            int blockerIndex;
+            Ray ray = maskVectors[from];
+            ulong bb = ray.NorthEast;
+            ulong bishopAttacks = bb;
+            if ((bb & bbAll) != 0)
+            {
+                blockerIndex = ChessMath.TrailingZeroCount(bb & bbAll);
+                bishopAttacks = ChessMath.AndNot(bishopAttacks, maskVectors[blockerIndex].NorthEast);
+            }
 
-        #region Make/Unmake Move
+            bb = ray.NorthWest;
+            bishopAttacks |= bb;
+            if ((bb & bbAll) != 0)
+            {
+                blockerIndex = ChessMath.TrailingZeroCount(bb & bbAll);
+                bishopAttacks = ChessMath.AndNot(bishopAttacks, maskVectors[blockerIndex].NorthWest);
+            }
+
+            bb = ray.SouthEast;
+            bishopAttacks |= bb;
+            if ((bb & bbAll) != 0)
+            {
+                blockerIndex = 63 - ChessMath.LeadingZeroCount(bb & bbAll);
+                bishopAttacks = ChessMath.AndNot(bishopAttacks, maskVectors[blockerIndex].SouthEast);
+            }
+
+            bb = ray.SouthWest;
+            bishopAttacks |= bb;
+            if ((bb & bbAll) != 0)
+            {
+                blockerIndex = 63 - ChessMath.LeadingZeroCount(bb & bbAll);
+                bishopAttacks = ChessMath.AndNot(bishopAttacks, maskVectors[blockerIndex].SouthWest);
+            }
+
+            return bishopAttacks;
+        }
+
+        public ulong GetRookAttacks(int from)
+        {
+            int blockerIndex;
+            Ray ray = maskVectors[from];
+            ulong bb = ray.North;
+            ulong rookAttacks = bb;
+            if ((bb & bbAll) != 0)
+            {
+                blockerIndex = ChessMath.TrailingZeroCount(bb & bbAll);
+                rookAttacks = ChessMath.AndNot(rookAttacks, maskVectors[blockerIndex].North);
+            }
+
+            bb = ray.East;
+            rookAttacks |= bb;
+            if ((bb & bbAll) != 0)
+            {
+                blockerIndex = ChessMath.TrailingZeroCount(bb & bbAll);
+                rookAttacks = ChessMath.AndNot(rookAttacks, maskVectors[blockerIndex].East);
+            }
+
+            bb = ray.South;
+            rookAttacks |= bb;
+            if ((bb & bbAll) != 0)
+            {
+                blockerIndex = 63 - ChessMath.LeadingZeroCount(bb & bbAll);
+                rookAttacks = ChessMath.AndNot(rookAttacks, maskVectors[blockerIndex].South);
+            }
+
+            bb = ray.West;
+            rookAttacks |= bb;
+            if ((bb & bbAll) != 0)
+            {
+                blockerIndex = 63 - ChessMath.LeadingZeroCount(bb & bbAll);
+                rookAttacks = ChessMath.AndNot(rookAttacks, maskVectors[blockerIndex].West);
+            }
+
+            return rookAttacks;
+        }
+
+#endregion
+
+#region Make/Unmake Move
 
         public bool MakeMove(Move move)
         {
@@ -1169,9 +1246,9 @@ namespace Emerita
             PopBoardState();
         }
 
-        #endregion
+#endregion
 
-        #region FEN string processing
+#region FEN string processing
 
         public string ToFenString()
         {
@@ -1386,7 +1463,7 @@ namespace Emerita
             return sb.ToString();
         }
 
-        #endregion
+#endregion
 
         public bool IsCheck()
         {
@@ -1395,7 +1472,7 @@ namespace Emerita
 
         private bool IsCheck(int byColor)
         {
-            int kingIndex = ChessMath.LowestSetBitIndex(bbaPieces[byColor ^ 1, Constants.PIECE_KING]);
+            int kingIndex = ChessMath.TrailingZeroCount(bbaPieces[byColor ^ 1, Constants.PIECE_KING]);
             return IsSquareAttackedByColor(kingIndex, byColor);
         }
 
@@ -1406,30 +1483,30 @@ namespace Emerita
                 return true;
             }
 
-            if ((bbaKnightMoves[index] & bbaPieces[color, Constants.PIECE_KNIGHT]) != 0)
+            if ((bbaPieceMoves[Constants.PIECE_KNIGHT, index] & bbaPieces[color, Constants.PIECE_KNIGHT]) != 0)
             {
                 return true;
             }
 
-            if ((bbaKingMoves[index] & bbaPieces[color, Constants.PIECE_KING]) != 0)
+            if ((bbaPieceMoves[Constants.PIECE_KING, index] & bbaPieces[color, Constants.PIECE_KING]) != 0)
             {
                 return true;
             }
 
-            ulong bb = bbaRookMoves[index] &
+            ulong bb = bbaPieceMoves[Constants.PIECE_ROOK, index] &
                           (bbaPieces[color, Constants.PIECE_ROOK] | bbaPieces[color, Constants.PIECE_QUEEN]);
 
-            bb |= bbaBishopMoves[index] &
+            bb |= bbaPieceMoves[Constants.PIECE_BISHOP, index] &
                   (bbaPieces[color, Constants.PIECE_BISHOP] | bbaPieces[color, Constants.PIECE_QUEEN]);
 
             while (bb != 0)
             {
-                int index2 = ChessMath.LowestSetBitIndex(bb);
+                int index2 = ChessMath.TrailingZeroCount(bb);
                 if ((bbaBetween[index2, index] & bbAll) == 0)
                 {
                     return true;
                 }
-                
+
                 ChessMath.ResetLowestSetBit(ref bb);
             }
 
@@ -1503,7 +1580,7 @@ namespace Emerita
             int index;
             while (bb != 0)
             {
-                index = ChessMath.LowestSetBitIndex(bb);
+                index = ChessMath.TrailingZeroCount(bb);
                 ChessMath.ResetLowestSetBit(ref bb);
                 colors[index] = Constants.COLOR_WHITE;
             }
@@ -1511,7 +1588,7 @@ namespace Emerita
             bb = bbaUnits[Constants.COLOR_BLACK];
             while (bb != 0)
             {
-                index = ChessMath.LowestSetBitIndex(bb);
+                index = ChessMath.TrailingZeroCount(bb);
                 ChessMath.ResetLowestSetBit(ref bb);
                 colors[index] = Constants.COLOR_BLACK;
             }

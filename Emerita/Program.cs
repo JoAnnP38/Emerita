@@ -1,12 +1,9 @@
-﻿using System.Diagnostics;
-using System.Numerics;
-using System.Runtime.Intrinsics.X86;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Configuration;
+using System.Diagnostics;
 
 namespace Emerita
 {
-    internal class Program
+    public class Program
     {
         static void Main(string[] args)
         {
@@ -16,6 +13,11 @@ namespace Emerita
 
             Util.TraceSwitch.Level = Enum.Parse<TraceLevel>(config["AppSettings:TraceLevel"] ?? "Error");
 
+            RunPerft();
+        }
+
+        static void RunPerft()
+        {
             Perft perft = new();
             Stopwatch watch = new();
 
@@ -51,7 +53,7 @@ namespace Emerita
                 Console.WriteLine($"{depth}: Elapsed = {watch.Elapsed}, Mnps: {Mnps,7:N2}, Nodes = {actual}");
             }
 
-            Perft.NumTasks = 8;
+            Perft.NumTasks = 6;
             Console.WriteLine($"\nMulti-threaded results ({Perft.NumTasks} threads):");
             for (int depth = 1; depth < 7; ++depth)
             {

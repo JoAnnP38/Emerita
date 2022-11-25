@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection.Metadata.Ecma335;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.VisualBasic;
-
-namespace Emerita
+﻿namespace Emerita
 {
     public sealed class Array2D<T> : ICloneable
     {

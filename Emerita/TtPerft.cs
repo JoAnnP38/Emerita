@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data.Common;
-using System.Linq;
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Emerita
+﻿namespace Emerita
 {
     public class TtPerft
     {
@@ -14,14 +6,6 @@ namespace Emerita
         {
             internal readonly ulong Hash;
             internal readonly ulong Data;
-            //internal readonly int depth;
-            //internal readonly ulong count;
-
-            public TtPerftItem()
-            {
-                Data = 0ul;
-                Hash = 0ul;
-            }
 
             public TtPerftItem(ulong hash, uint depth, ulong count)
             {

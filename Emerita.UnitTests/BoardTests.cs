@@ -7,6 +7,8 @@ namespace Emerita.UnitTests
     [TestClass]
     public class BoardTests
     {
+        public TestContext? TestContext { get; set; }
+
         [TestMethod]
         public void DefaultCtorTest()
         {
@@ -73,7 +75,7 @@ namespace Emerita.UnitTests
 
             while (bb != 0)
             {
-                locs.Add(ChessMath.LowestSetBitIndex(bb));
+                locs.Add(ChessMath.TrailingZeroCount(bb));
                 ChessMath.ResetLowestSetBit(ref bb);
             }
 
@@ -182,6 +184,27 @@ namespace Emerita.UnitTests
                 }
 
             }
+        }
+
+        [TestMethod]
+        public void GetBishopAttacksTest()
+        {
+            Board bd = new();
+            bd.LoadFenPosition("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
+            ulong bishopAttacks = bd.GetBishopAttacks(11);
+            TestContext?.WriteLine(ChessString.BitBoardToString(bishopAttacks));
+
+            bishopAttacks = bd.GetBishopAttacks(12);
+            TestContext?.WriteLine(ChessString.BitBoardToString(bishopAttacks));
+
+            bishopAttacks = bd.GetBishopAttacks(40);
+            TestContext?.WriteLine(ChessString.BitBoardToString(bishopAttacks));
+
+            ulong rookAttacks = bd.GetRookAttacks(0);
+            TestContext?.WriteLine(ChessString.BitBoardToString(rookAttacks));
+
+            rookAttacks = bd.GetRookAttacks(7);
+            TestContext?.WriteLine(ChessString.BitBoardToString(rookAttacks));
         }
     }
 }

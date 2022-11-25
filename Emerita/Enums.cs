@@ -31,4 +31,35 @@
         MidGame,
         EndGame
     }
+
+    public enum UciCommand
+    {
+        Debug,
+        Go,
+        IsReady,
+        PonderHit,
+        Position,
+        Quit,
+        Register,
+        SetOption,
+        Stop,
+        Uci,
+        UciNewGame
+    }
+
+    public enum UciGoOption
+    {
+        BInc,
+        BTime,
+        Depth,
+        Infinite,
+        Mate,
+        MovesToGo,
+        MoveTime,
+        Nodes,
+        Ponder,
+        SearchMoves,
+        WInc,
+        WTime
+    }
 }

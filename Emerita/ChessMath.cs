@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics.X86;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Emerita
 {
@@ -112,28 +108,33 @@ namespace Emerita
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int LowestSetBitIndex(ulong bitBoard)
+        public static int TrailingZeroCount(ulong bitBoard)
         {
 #if X64
             return (int)Bmi1.X64.TrailingZeroCount(bitBoard);
 #else
-            if (bitBoard == 0ul)
-            {
-                return 64;
-            }
-            ulong bbi = bitBoard ^ (bitBoard - 1);
-            uint folded = (uint)bbi ^ (uint)(bbi >> 32);
-            return lsb64Table[folded * 0x78291ACF >> 26];
+            return BitOperations.TrailingZeroCount(bitBoard);
+            
 #endif
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int LeadingZeroCount(ulong bitBoard)
+        {
+#if X64
+            return (int)Lzcnt.X64.LeadingZeroCount(bitBoard);
+#else
+            return BitOperations.LeadingZeroCount(bitBoard);
+#endif
+        }
+
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ResetLowestSetBit(ref ulong bitBoard)
         {
 #if X64
             bitBoard = Bmi1.X64.ResetLowestSetBit(bitBoard);
 #else
-            ResetBit(ref bitBoard, LowestSetBitIndex(bitBoard));
+            ResetBit(ref bitBoard, TrailingZeroCount(bitBoard));
 #endif
         }
 

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Platforms>AnyCPU;x64</Platforms>
@@ -10,6 +10,9 @@
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <Title>Emerita Chess Engine</Title>
     <PlatformTarget>x64</PlatformTarget>
+    <PackageProjectUrl>https://github.com/JoAnnP38/Emerita</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/JoAnnP38/Emerita</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

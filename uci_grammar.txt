@@ -1,0 +1,62 @@
+commands : 	command |
+			command '\n' commands 
+			;
+command : 	UCI |
+			DEBUG switch |
+			ISREADY |
+			SETOPTION NAME id |
+			SETOPTION NAME id VALUE string |
+			REGISTER register_options |
+			UCINEWGAME |
+			POSITION position_spec |
+			POSITION position_spec MOVES algebraic_moves |
+			GO |
+			GO sub_commands |
+			STOP |
+			PONDERHIT |
+			QUIT
+			;
+			
+switch : 	ON | OFF ;
+id :		[A-Za-z0-9 ]+
+string : 	.+ 
+register_options :	LATER |
+					NAME id |
+					NAME id CODE string
+					;
+position_spec :	FEN fen_string |
+				STARTPOS
+				;
+				
+algebraic_moves :	algebraic_move |
+					algebraic_move algebraic_moves
+					;
+					
+algebraic_move :	algebraic_coord algebraic_coord |
+					algebraid_coord algebraid_coord promote_piece
+					;
+					
+algebraic_coord :	[a-h][1-8] ;
+
+promote_piece :	n | b | r | q ;
+
+sub_commands :	sub_command |
+				sub_command sub_commands
+				;
+					
+sub_command :	SEARCHMOVES algebraic_moves |
+				PONDER |
+				WTIME integer |
+				BTIME integer |
+				WINC integer |
+				BINC integer |
+				MOVESTOGO integer |
+				DEPTH integer |
+				NODES integer |
+				MATE integer |
+				MOVETIME integer |
+				INFINITE
+				;
+
+					
+					

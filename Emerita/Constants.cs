@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Emerita
+﻿namespace Emerita
 {
     public static class Constants
     {
@@ -12,7 +6,7 @@ namespace Emerita
 
         public const ulong BITBOARD_EMPTY = 0ul;
         public const int MAX_GAME_PLY = 1024;
-        public const int MAX_SEARCH_PLY = 24;
+        public const int MAX_SEARCH_PLY = 32;
         public const int MOVE_LIST_SIZE = MAX_SEARCH_PLY * 64;
         public const short BASE_CAPTURE_SCORE = 1000;
         public const short BASE_HASH_SCORE = 10000;

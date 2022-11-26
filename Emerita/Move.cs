@@ -174,7 +174,7 @@ namespace Emerita
             return HashCode.Combine(Piece, From, To, Flags, Capture, Promote, Score);
         }
 
-        public static Move NullMove { get; } = 
+        public static Move NullMove { get; } =
             new(Constants.PIECE_NONE, Constants.D4, Constants.D4, MoveFlags.NullMove);
     }
 }

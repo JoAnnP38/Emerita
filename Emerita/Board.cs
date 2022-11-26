@@ -903,10 +903,10 @@ namespace Emerita
             {
                 case Constants.PIECE_KNIGHT: return bbaPieceMoves[Constants.PIECE_KNIGHT, from];
                 case Constants.PIECE_BISHOP: return GetBishopAttacks(from);
-                case Constants.PIECE_ROOK:   return GetRookAttacks(from);
-                case Constants.PIECE_QUEEN:  return GetBishopAttacks(from) | GetRookAttacks(from);
-                case Constants.PIECE_KING:   return bbaPieceMoves[Constants.PIECE_KING, from];
-                default:                     return 0ul;
+                case Constants.PIECE_ROOK: return GetRookAttacks(from);
+                case Constants.PIECE_QUEEN: return GetBishopAttacks(from) | GetRookAttacks(from);
+                case Constants.PIECE_KING: return bbaPieceMoves[Constants.PIECE_KING, from];
+                default: return 0ul;
             }
         }
 
@@ -931,9 +931,9 @@ namespace Emerita
             return bb;
         }
 
-#endregion
+        #endregion
 
-#region Make/Unmake Move
+        #region Make/Unmake Move
 
         public bool MakeMove(Move move)
         {
@@ -1098,9 +1098,9 @@ namespace Emerita
             PopBoardState();
         }
 
-#endregion
+        #endregion
 
-#region FEN string processing
+        #region FEN string processing
 
         public string ToFenString()
         {
@@ -1315,7 +1315,7 @@ namespace Emerita
             return sb.ToString();
         }
 
-#endregion
+        #endregion
 
         public bool IsCheck()
         {

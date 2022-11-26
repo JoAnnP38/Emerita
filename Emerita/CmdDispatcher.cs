@@ -1,6 +1,6 @@
 ﻿namespace Emerita
 {
-    public class CmdDispatcher 
+    public class CmdDispatcher
     {
 
     }

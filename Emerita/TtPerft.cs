@@ -36,7 +36,7 @@
         {
             int index = (int)(hash & Mask);
             TtPerftItem item = Table[index];
-            
+
             if (item.IsValid(hash) && item.Depth == (uint)depth)
             {
                 return item.Count;

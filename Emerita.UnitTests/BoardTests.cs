@@ -75,8 +75,8 @@ namespace Emerita.UnitTests
 
             while (bb != 0)
             {
-                locs.Add(ChessMath.TrailingZeroCount(bb));
-                ChessMath.ResetLowestSetBit(ref bb);
+                locs.Add(BitOps.TzCount(bb));
+                bb = BitOps.ResetLsb(bb);
             }
 
             bool allExpectedInSet = locations.All(sq => locs.Contains(sq));
@@ -194,17 +194,27 @@ namespace Emerita.UnitTests
             ulong bishopAttacks = bd.GetBishopAttacks(11);
             TestContext?.WriteLine(ChessString.BitBoardToString(bishopAttacks));
 
+            Assert.AreEqual(bishopAttacks, bd.GetBishopAttacks(11));
+
             bishopAttacks = bd.GetBishopAttacks(12);
             TestContext?.WriteLine(ChessString.BitBoardToString(bishopAttacks));
+
+            Assert.AreEqual(bishopAttacks, bd.GetBishopAttacks(12));
 
             bishopAttacks = bd.GetBishopAttacks(40);
             TestContext?.WriteLine(ChessString.BitBoardToString(bishopAttacks));
 
+            Assert.AreEqual(bishopAttacks, bd.GetBishopAttacks(40));
+
             ulong rookAttacks = bd.GetRookAttacks(0);
             TestContext?.WriteLine(ChessString.BitBoardToString(rookAttacks));
 
+            Assert.AreEqual(rookAttacks, bd.GetRookAttacks(0));
+
             rookAttacks = bd.GetRookAttacks(7);
             TestContext?.WriteLine(ChessString.BitBoardToString(rookAttacks));
+
+            Assert.AreEqual(rookAttacks, bd.GetRookAttacks(7));
         }
     }
 }

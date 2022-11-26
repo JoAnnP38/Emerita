@@ -27,7 +27,7 @@
 
         public TtPerft(int capacity)
         {
-            int c = ChessMath.GreatestPowerOfTwoLessThan(capacity);
+            int c = BitOps.GreatestPowerOfTwoLessThan(capacity);
             Table = new TtPerftItem[c];
             Mask = (uint)(c - 1);
         }

@@ -11,7 +11,7 @@
         All = (WhiteKingSide | WhiteQueenSide | BlackKingSide | BlackQueenSide)
     }
 
-    public enum MoveFlags
+    public enum MoveFlags : byte
     {
         Normal = 0,
         Capture,
@@ -25,14 +25,14 @@
         NullMove
     }
 
-    public enum GamePhase
+    public enum GamePhase : byte
     {
         Opening,
         MidGame,
         EndGame
     }
 
-    public enum UciCommand
+    public enum UciCommand : byte
     {
         Debug,
         Go,
@@ -47,7 +47,7 @@
         UciNewGame
     }
 
-    public enum UciGoOption
+    public enum UciGoOption : byte
     {
         BInc,
         BTime,

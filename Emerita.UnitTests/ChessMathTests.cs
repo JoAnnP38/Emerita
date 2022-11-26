@@ -79,10 +79,10 @@ namespace Emerita.UnitTests
         [TestMethod]
         public void IntrinsicTest()
         {
-            int actual = ChessMath.TrailingZeroCount(0);
+            int actual = BitOps.TzCount(0);
             Assert.AreEqual(64, actual);
 
-            actual = ChessMath.LeadingZeroCount(0);
+            actual = BitOps.LzCount(0);
             Assert.AreEqual(64, actual);
         }
     }

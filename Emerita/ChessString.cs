@@ -85,7 +85,7 @@ namespace Emerita
             {
                 for (int i = 0; i < 8; i++)
                 {
-                    sb.Append(ChessMath.GetBit(bitBoard, i + j));
+                    sb.Append(BitOps.GetBit(bitBoard, i + j));
                     sb.Append(' ');
                 }
 

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using System.Diagnostics;
+using System.Runtime;
 
 namespace Emerita
 {
@@ -27,6 +28,7 @@ namespace Emerita
                 watch.Restart();
                 ulong actual = perft.Execute(depth);
                 watch.Stop();
+
                 double Mnps = (double)actual / (watch.Elapsed.TotalSeconds * 1000000.0D);
                 Console.WriteLine($"{depth}: Elapsed = {watch.Elapsed}, Mnps: {Mnps,7:N2}, nodes = {actual}");
             }

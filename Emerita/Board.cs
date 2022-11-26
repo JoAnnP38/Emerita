@@ -737,43 +737,29 @@ namespace Emerita
         public void GenerateMoves(MoveList moveList)
         {
             moveList.StartPly(ply);
-
             GenerateEnPassant(moveList);
             GenerateCastling(moveList);
             GeneratePawnMoves(moveList);
 
-            ulong bb1, bb2, bb3;
-            int from, to;
-
             for (int piece = Constants.PIECE_KNIGHT; piece < Constants.MAX_PIECES; ++piece)
             {
-                bb1 = bbaPieces[sideToMove, piece];
-                while (bb1 != 0)
+                for (ulong bb1 = bbaPieces[sideToMove, piece]; bb1 != 0; bb1 = BitOps.ResetLsb(bb1))
                 {
-                    from = BitOps.TzCount(bb1);
-                    bb1 = BitOps.ResetLsb(bb1);
+                    int from = BitOps.TzCount(bb1);
+                    ulong bb2 = GetPieceMoves(piece, from);
 
-                    bb2 = GetPieceMoves(piece, from);
-                    bb3 = bb2 & bbaUnits[OpponentColor];
-
-                    while (bb3 != 0)
+                    for (ulong bb3 = bb2 & bbaUnits[OpponentColor]; bb3 != 0; bb3 = BitOps.ResetLsb(bb3))
                     {
-                        to = BitOps.TzCount(bb3);
-                        bb3 = BitOps.ResetLsb(bb3);
+                        int to = BitOps.TzCount(bb3);
                         moveList.Add(piece, from, to, MoveFlags.Capture, board[to], score: captureScores[board[to], piece]);
                     }
-
-                    bb3 = BitOps.AndNot(bb2, bbAll);
-
-                    while (bb3 != 0)
+                    for (ulong bb3 = BitOps.AndNot(bb2, bbAll); bb3 != 0; bb3 = BitOps.ResetLsb(bb3))
                     {
-                        to = BitOps.TzCount(bb3);
-                        bb3 = BitOps.ResetLsb(bb3);
+                        int to = BitOps.TzCount(bb3);
                         moveList.Add(piece, from, to, score: history[from, to]);
                     }
                 }
             }
-
             moveList.EndPly();
         }
 
@@ -901,12 +887,23 @@ namespace Emerita
         {
             switch (piece)
             {
-                case Constants.PIECE_KNIGHT: return bbaPieceMoves[Constants.PIECE_KNIGHT, from];
-                case Constants.PIECE_BISHOP: return GetBishopAttacks(from);
-                case Constants.PIECE_ROOK: return GetRookAttacks(from);
-                case Constants.PIECE_QUEEN: return GetBishopAttacks(from) | GetRookAttacks(from);
-                case Constants.PIECE_KING: return bbaPieceMoves[Constants.PIECE_KING, from];
-                default: return 0ul;
+                case Constants.PIECE_KNIGHT: 
+                    return bbaPieceMoves[Constants.PIECE_KNIGHT, from];
+
+                case Constants.PIECE_BISHOP: 
+                    return GetBishopAttacks(from);
+
+                case Constants.PIECE_ROOK: 
+                    return GetRookAttacks(from);
+
+                case Constants.PIECE_QUEEN: 
+                    return GetBishopAttacks(from) | GetRookAttacks(from);
+
+                case Constants.PIECE_KING: 
+                    return bbaPieceMoves[Constants.PIECE_KING, from];
+
+                default: 
+                    return 0ul;
             }
         }
 
